@@ -42,12 +42,11 @@ services:
   # mysql:
   #   build:
   #     context: .
-  #     dockerfile: .docker/mysql/Dockerfile
+  #     dockerfile: mysql/Dockerfile
   #     args:
   #       - MYSQL_VERSION=${MYSQL_VERSION:-8.0.28}
   #   container_name: ${APP_NAME:-vinatis}_mysql
   #   restart: unless-stopped
-  #   tty: true
   #   volumes:
   #     - mysql-data:/var/lib/mysql
   #   ports:
