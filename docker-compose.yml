@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+      args:
+        - NGINX_VERSION=${NGINX_VERSION:-1.21.6-alpine}
+    container_name: ${APP_NAME:-vinatis}_nginx
+    restart: unless-stopped
+    ports:
+      - 8181:80
+    volumes:
+      - .:/var/www
+      - nginx/conf.d/vinafood.conf:/etc/nginx/conf.d/default.conf
+      - nginx/conf.d/custom.conf:/etc/nginx/conf.d/custom.conf
+      - nginx/nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      - default
+
+  php:
+    build:
+      context: .
+      dockerfile: php/Dockerfile
+      args:
+        - PHP_VERSION=${PHP_VERSION:-8.1.4-fpm-alpine3.15}
+    container_name: ${APP_NAME:-vinatis}_php
+    restart: unless-stopped
+    ports:
+      - 9000:9000
+    depends_on:
+      - php
+      - mysql
+    volumes:
+      - .:/var/www
+      - php/conf.d/custom.ini:/usr/local/etc/php/conf.d/custom.ini
+      - php/conf.d/opcache.ini:/usr/local/etc/php/conf.d/opcache.ini
+    networks:
+      - default
+
+  # mysql:
+  #   build:
+  #     context: .
+  #     dockerfile: .docker/mysql/Dockerfile
+  #     args:
+  #       - MYSQL_VERSION=${MYSQL_VERSION:-8.0.28}
+  #   container_name: ${APP_NAME:-vinatis}_mysql
+  #   restart: unless-stopped
+  #   tty: true
+  #   volumes:
+  #     - mysql-data:/var/lib/mysql
+  #   ports:
+  #     - 33061:3306
+  #   networks:
+  #     - default
+
+  redis:
+    image: redis:latest
+    container_name: ${APP_NAME:-vinatis}_redis
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    ports:
+      - 63791:6379
+    networks:
+      - default
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: ${APP_NAME:-vinatis}_mailhog
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    networks:
+      - default
+
+networks:
+  default:
+    name: ${DOCKER_NETWORK:-vinafood_network}
+    driver: bridge
+    external: true
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
